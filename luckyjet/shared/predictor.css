@@ -1,0 +1,364 @@
+/* =========================================================
+   Système commun aux 4 prédicteurs (Aviator, LuckyJet, Meta, Mines)
+   - bouton "? Comment jouer" : comment jouer + jeu responsable + derniers travaux
+   - question "avez-vous gagné ?" après chaque prédiction
+   - limite : 8 pertes en moins d'1 h -> pause conseillée de 6 h
+   Toutes les classes sont préfixées pr- pour ne rien casser
+   dans le CSS existant des jeux.
+   ========================================================= */
+
+:root {
+    --pr-accent: #3b82f6;
+}
+
+/* ---------- Bouton "? Comment jouer" ---------- */
+.pr-help {
+    height: 38px;
+    flex: 0 0 auto;
+    border-radius: 50px;
+    background: rgba(255, 255, 255, .13);
+    border: 1.5px solid rgba(255, 255, 255, .34);
+    color: #fff;
+    font-family: inherit;
+    line-height: 1;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 0 13px 0 6px;
+    transition: background-color .15s ease, transform .1s ease;
+}
+
+.pr-help-icon {
+    width: 25px;
+    height: 25px;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.pr-help-text {
+    font-size: clamp(.68rem, 3vw, .82rem);
+    font-weight: 600;
+    letter-spacing: .2px;
+    white-space: nowrap;
+}
+
+.pr-help:hover {
+    background: rgba(255, 255, 255, .28);
+}
+
+.pr-help:active {
+    transform: scale(.93);
+}
+
+/* Si le jeu n'a pas de barre du haut où l'accrocher : flottant en haut à droite */
+.pr-help.pr-help-floating {
+    position: fixed;
+    top: calc(12px + env(safe-area-inset-top));
+    right: 14px;
+    z-index: 320;
+}
+
+/* Petits écrans : le bouton se resserre pour laisser la place au reste
+   de la barre du haut (bouton retour, badge LIVE...) */
+@media (max-width: 360px) {
+    .pr-help {
+        height: 34px;
+        gap: 5px;
+        padding: 0 10px 0 5px;
+    }
+
+    .pr-help-icon {
+        width: 22px;
+        height: 22px;
+        font-size: 13px;
+    }
+
+    .pr-help-text {
+        font-size: .66rem;
+        letter-spacing: 0;
+    }
+}
+
+/* ---------- Petit message temporaire ---------- */
+.pr-toast {
+    position: fixed;
+    top: calc(14px + env(safe-area-inset-top));
+    left: 50%;
+    z-index: 360;
+    max-width: min(88vw, 380px);
+    background: rgba(14, 16, 28, .95);
+    color: #fff;
+    padding: 11px 20px;
+    border-radius: 14px;
+    font-family: inherit;
+    font-size: clamp(.78rem, 3.4vw, .92rem);
+    font-weight: 600;
+    text-align: center;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, .45);
+    border: 1.5px solid rgba(255, 255, 255, .22);
+    opacity: 0;
+    visibility: hidden;
+    transform: translate(-50%, -14px);
+    transition: opacity .25s ease, transform .25s ease, visibility .25s;
+}
+
+.pr-toast.pr-show {
+    opacity: 1;
+    visibility: visible;
+    transform: translate(-50%, 0);
+}
+
+/* ---------- Fenêtres ---------- */
+.pr-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 340;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(0, 0, 0, .6);
+    backdrop-filter: blur(9px);
+    -webkit-backdrop-filter: blur(9px);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity .3s ease, visibility .3s;
+}
+
+.pr-overlay.pr-show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.pr-card {
+    position: relative;
+    width: min(92vw, 430px);
+    max-height: 85vh;
+    overflow-y: auto;
+    padding: clamp(22px, 6vw, 32px) clamp(18px, 5vw, 28px);
+    border-radius: 24px;
+    /* Pas de backdrop-filter ici : sur Chrome/Android il fait disparaître
+       les boutons enfants. Le flou est porté par .pr-overlay. */
+    background: rgba(255, 255, 255, .12);
+    border: 2px solid rgba(255, 255, 255, .3);
+    box-shadow: 0 10px 40px rgba(0, 0, 0, .5), inset 0 0 0 2px rgba(255, 255, 255, .14);
+    text-align: center;
+    font-family: inherit;
+    transform: scale(.86);
+    transition: transform .3s cubic-bezier(.2, 1.3, .5, 1);
+}
+
+.pr-overlay.pr-show .pr-card {
+    transform: scale(1);
+}
+
+.pr-close {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    width: 30px;
+    height: 30px;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .18);
+    color: #fff;
+    font-size: 15px;
+    font-family: inherit;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.pr-close:hover {
+    background: rgba(255, 255, 255, .34);
+}
+
+.pr-title {
+    color: #fff;
+    font-size: clamp(1rem, 4.6vw, 1.25rem);
+    font-weight: 700;
+    margin: 0 0 14px;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, .5);
+}
+
+.pr-text {
+    margin: 0 0 clamp(16px, 4vh, 24px);
+    color: #fff;
+    font-size: clamp(1rem, 4.8vw, 1.35rem);
+    font-weight: 700;
+    line-height: 1.4;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, .55);
+}
+
+.pr-sub {
+    display: block;
+    margin-top: 10px;
+    font-size: clamp(.78rem, 3.5vw, .95rem);
+    font-weight: 400;
+    opacity: .88;
+}
+
+.pr-steps {
+    text-align: left;
+    color: #fff;
+    font-size: clamp(.83rem, 3.5vw, .96rem);
+    line-height: 1.55;
+    margin: 0 0 16px;
+    padding-left: 20px;
+}
+
+.pr-steps li {
+    margin-bottom: 8px;
+}
+
+.pr-warning {
+    text-align: left;
+    color: #ffe9b0;
+    font-size: clamp(.76rem, 3.2vw, .88rem);
+    line-height: 1.55;
+    margin: 0;
+}
+
+.pr-actions {
+    display: flex;
+    justify-content: center;
+    gap: clamp(10px, 4vw, 16px);
+    flex-wrap: wrap;
+}
+
+/* Boutons des fenêtres — indépendants du style de chaque jeu */
+.pr-btn {
+    min-width: 116px;
+    height: 44px;
+    padding: 0 20px;
+    border: none;
+    border-radius: 12px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    color: #fff;
+    cursor: pointer;
+    transition: filter .15s ease, transform .1s ease;
+}
+
+.pr-btn:active {
+    transform: scale(.97);
+}
+
+.pr-btn-yes {
+    background: linear-gradient(93deg, var(--pr-accent), rgba(0, 0, 0, .35));
+    box-shadow: 0 6px 18px rgba(0, 0, 0, .35);
+}
+
+.pr-btn-no {
+    background: rgba(255, 255, 255, .16);
+    border: 1px solid rgba(255, 255, 255, .28);
+}
+
+/* La question descend en bas de l'écran, par-dessus les boutons du jeu :
+   il faut y répondre avant de pouvoir relancer une prédiction. */
+#pr-win {
+    align-items: flex-end;
+    padding-bottom: clamp(60px, 14vh, 140px);
+}
+
+/* ---------- Compte à rebours de la pause ---------- */
+.pr-countdown {
+    margin: 6px 0 0;
+    color: #fff;
+    font-size: clamp(1.5rem, 8vw, 2.2rem);
+    font-weight: 700;
+    letter-spacing: 2px;
+    font-variant-numeric: tabular-nums;
+    text-shadow: 0 2px 14px rgba(0, 0, 0, .5);
+}
+
+/* ---------- Derniers travaux (historique) ---------- */
+.pr-history-title {
+    margin: 20px 0 8px;
+    text-align: left;
+    color: #fff;
+    font-size: clamp(.9rem, 3.8vw, 1rem);
+    font-weight: 700;
+}
+
+.pr-history {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    text-align: left;
+    max-height: 168px;
+    overflow-y: auto;
+}
+
+.pr-history li {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 7px 10px;
+    margin-bottom: 5px;
+    border-radius: 9px;
+    background: rgba(0, 0, 0, .26);
+    color: #fff;
+    font-size: clamp(.74rem, 3.1vw, .85rem);
+    line-height: 1.35;
+}
+
+.pr-history .pr-h-icon {
+    flex: 0 0 auto;
+    font-size: .95em;
+}
+
+.pr-history .pr-h-label {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.pr-history .pr-h-time {
+    flex: 0 0 auto;
+    opacity: .6;
+    font-variant-numeric: tabular-nums;
+}
+
+.pr-history-empty {
+    text-align: left;
+    color: rgba(255, 255, 255, .6);
+    font-size: clamp(.76rem, 3.2vw, .86rem);
+    margin: 0;
+}
+
+.pr-stats {
+    display: flex;
+    gap: 8px;
+    margin: 10px 0 0;
+}
+
+.pr-stat {
+    flex: 1;
+    padding: 8px 6px;
+    border-radius: 10px;
+    background: rgba(0, 0, 0, .26);
+    color: #fff;
+    text-align: center;
+}
+
+.pr-stat b {
+    display: block;
+    font-size: clamp(.95rem, 4.2vw, 1.15rem);
+}
+
+.pr-stat span {
+    font-size: clamp(.62rem, 2.7vw, .7rem);
+    opacity: .68;
+    letter-spacing: .5px;
+}

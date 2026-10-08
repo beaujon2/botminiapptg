@@ -1,0 +1,729 @@
+<!-- Mines — version FR. Les images/polices sont dans le dossier ./img/ -->
+<!DOCTYPE html>
+<html lang="fr">
+    <head>
+        <meta charset="UTF-8">
+<!-- This site is hosted on Netlify. Anyone can build and deploy a site
+     like this one for free: https://netlify.new/?utm_campaign=loops&utm_source=ai-legible&utm_medium=owned&utm_content=comment&utm_id=6ee3d0c2-bf15-498b-9b75-7e9de0474555
+     Netlify hosting facts for this site: static/SSR served via Netlify Edge. -->
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <title>Mines</title>
+        <link rel="icon" type="image/png" href="img/favicon.png">
+        <link rel="apple-touch-icon" href="img/apple-touch-icon.png">
+        <meta name="theme-color" content="#0a0b1a">
+        <link rel="stylesheet" href="../shared/predictor.css">
+        <style>
+            @font-face {
+                font-family: 'SF Pro Display';
+                src: url('img/font-sf-pro-display.ttf') format('truetype');
+                font-weight: 900;
+                font-style: italic;
+            }
+
+            * {
+                box-sizing: border-box;
+                -webkit-tap-highlight-color: transparent;
+            }
+
+            :root {
+                /* Toute la composition se met à l'échelle depuis --board-size :
+                   limitée par la largeur (62vw) ET la hauteur (44vh) de l'écran */
+                --board-size: min(320px, 62vw, 44vh);
+                /* décors latéraux : proportions natives 68/320 et 85/320 */
+                --deco-left: calc(var(--board-size) * .2125);
+                --deco-right: calc(var(--board-size) * .2656);
+                --ui-width: min(340px, 88vw);
+            }
+
+            html {
+                background-color: #0b1020;
+            }
+
+            body {
+                margin: 0;
+                font-family: 'SF Pro Display', sans-serif;
+                overflow-x: hidden;
+                min-height: 100vh;
+                /* Fond façon mine 1win : bleu nuit + halo froid */
+                background-color: #0b1020;
+                background-image:
+                    radial-gradient(120% 65% at 50% -8%, #24365f 0%, rgba(36, 54, 95, 0) 62%),
+                    radial-gradient(85% 45% at 50% 34%, #1a2745 0%, rgba(26, 39, 69, 0) 72%),
+                    linear-gradient(180deg, #111c33 0%, #0c1324 46%, #070b16 100%);
+                background-repeat: no-repeat;
+                background-attachment: fixed;
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                justify-content: flex-start;
+                padding: clamp(12px, 5vh, 52px) 0 0;
+                position: relative;
+                z-index: 0;
+            }
+
+            /* Sol rocheux : collé au bas, pleine largeur, sans jamais recouvrir l'interface.
+               margin-top:auto le pousse en bas de la colonne flex (body). */
+            .logos2 {
+                position: relative;
+                width: 100%;
+                margin: auto 0 0;
+                padding: 0 0 env(safe-area-inset-bottom);
+                border: none;
+                /* remplit l'encoche du bas avec la même teinte que le bas du rocher */
+                background-color: #0c1322;
+                line-height: 0;
+                pointer-events: none;
+                -webkit-user-select: none;
+                user-select: none;
+                z-index: 0;
+            }
+
+            .logos2 img {
+                display: block;
+                width: 100%;
+                /* hauteur = largeur / 2.69 (ratio natif), plafonnée sur grand écran
+                   et sur écran bas (paysage) pour ne jamais manger la page */
+                height: min(37vw, 250px, 26vh);
+                object-fit: cover;
+                object-position: top center;
+            }
+
+            .logo {
+                display: flex;
+                justify-content: center;
+                width: 100%;
+                margin: 0 0 2px;
+                z-index: 3;
+            }
+
+            .logo img {
+                width: clamp(74px, 22vw, 96px);
+                height: auto;
+                opacity: 0.9;
+            }
+
+            .flex {
+                display: flex;
+                width: 100%;
+                background: radial-gradient(50% 50% at 50% 50%, rgba(32, 45, 78, .8) 0, rgba(21, 27, 46, 0) 100%);
+                margin-top: 2px;
+            }
+
+            .justify-center {
+                justify-content: center;
+            }
+
+            .align-middle {
+                vertical-align: middle;
+            }
+
+            .cells-board-wrapper {
+                margin: 14px auto;
+                position: relative;
+                width: var(--board-size);
+            }
+
+            .cells-board-wrapper::before {
+                content: url('img/deco-left.svg');
+                position: absolute;
+                top: 14%;
+                right: 100%;
+                width: var(--deco-left);
+                max-width: var(--deco-left);
+                height: auto;
+                z-index: 1;
+                opacity: .9;
+                pointer-events: none;
+            }
+
+            .cells-board-wrapper::after {
+                content: url('img/deco-right.svg');
+                position: absolute;
+                top: 2%;
+                left: 100%;
+                width: var(--deco-right);
+                max-width: var(--deco-right);
+                height: auto;
+                z-index: 1;
+                opacity: .9;
+                pointer-events: none;
+            }
+
+            @media (min-width: 768px) {
+                .cells-board-wrapper {
+                    margin: 24px auto;
+                }
+            }
+
+            .cells-board {
+                background-color: #0a0f1d;
+                background-image: url('img/board-bg.png');
+                background-position: 50%;
+                background-repeat: no-repeat;
+                background-size: 100%;
+                border-radius: 25px;
+                box-shadow: 0 -2px 20px rgba(42, 49, 69, .4), 0 4px 54px rgba(42, 49, 69, .2);
+                display: grid;
+                /* minmax(0, 1fr) et non 1fr : sinon le contenu d'une case
+                   (ex. une étoile SVG) peut agrandir la ligne et faire
+                   sortir les cases du plateau. */
+                grid-template-columns: repeat(5, minmax(0, 1fr));
+                grid-template-rows: repeat(5, minmax(0, 1fr));
+                gap: 4px;
+                padding: 10px;
+                position: relative;
+                overflow: hidden;
+                width: var(--board-size);
+                height: var(--board-size);
+                margin: 0 auto;
+            }
+
+            .cell {
+                background: transparent;
+                border: none;
+                align-items: center;
+                display: flex;
+                justify-content: center;
+                z-index: 1;
+                width: 100%;
+                height: 100%;
+                min-width: 0;
+                min-height: 0;
+                overflow: hidden;
+                padding: 0;
+                position: relative;
+            }
+
+            .cell img {
+                width: 85%;
+                height: 85%;
+                display: block;
+                object-fit: contain;
+            }
+
+            /* Conteneur de l'étoile révélée : il remplit la case, jamais plus. */
+            .cell .star-holder {
+                width: 100%;
+                height: 100%;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                position: relative;
+            }
+
+            /* L'étoile suit la taille de la case (comme les tuiles) au lieu
+               d'être figée à 56px, sinon elle dépasse du plateau sur mobile. */
+            .cell svg {
+                width: 85%;
+                height: 85%;
+                display: block;
+            }
+
+            .cells-board-mask {
+                height: 100%;
+                width: 100%;
+                left: 0;
+                -webkit-mask-clip: border-box;
+                mask-clip: border-box;
+                -webkit-mask-size: 100% 100%;
+                mask-size: 100% 100%;
+                position: absolute;
+                top: 0;
+                z-index: 2;
+                pointer-events: none;
+            }
+
+            .status-bar {
+                background: linear-gradient(180deg, rgba(26, 35, 60, .96) 0%, rgba(19, 26, 45, .96) 100%);
+                border: 1px solid rgba(151, 163, 203, .14);
+                border-radius: 16px;
+                box-shadow: 0 10px 30px rgba(0, 0, 0, .35), inset 0 1px 0 rgba(255, 255, 255, .05);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 10px;
+                padding: 14px;
+                position: relative;
+                z-index: 4;
+                width: var(--ui-width);
+                /* margin-top:auto -> la barre descend dans l'espace libre et se
+                   partage le vide avec le sol rocheux (50/50). Si l'écran est
+                   trop court, l'auto retombe à 0 : jamais de débordement. */
+                margin: auto auto 0;
+            }
+
+            .status-bar__select-traps {
+                background-color: rgb(10 15 30);
+                border: 1px solid rgba(151, 163, 203, .12);
+                border-radius: 12px;
+                flex: none;
+                height: 3.25rem;
+                padding: 0 .35rem;
+                display: flex;
+                align-items: center;
+                justify-content: space-between;
+                width: 100%;
+            }
+
+            .select-traps {
+                align-items: center;
+                display: flex;
+                justify-content: space-between;
+                background: none;
+                width: 100%;
+            }
+
+            .select-traps__content {
+                align-items: center;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                gap: 2px;
+                flex: 1;
+                min-width: 0;
+            }
+
+            .select-traps__traps_amount {
+                color: #f3f3f3;
+                font-size: 18px;
+                font-weight: 600;
+                line-height: 20px;
+            }
+
+            .select-traps__title {
+                color: #97a3cb;
+                font-size: 11px;
+                font-weight: 400;
+                letter-spacing: .06em;
+                line-height: 14px;
+                text-transform: uppercase;
+                white-space: nowrap;
+            }
+
+            #prev_preset_btn, #next_preset_btn {
+                background: rgba(151, 163, 203, .08);
+                border: none;
+                border-radius: 9px;
+                cursor: pointer;
+                padding: 0;
+                width: 2.5rem;
+                height: 2.5rem;
+                flex: 0 0 auto;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                transition: background-color .15s ease, transform .1s ease;
+            }
+
+            #prev_preset_btn:active, #next_preset_btn:active {
+                background: rgba(151, 163, 203, .18);
+                transform: scale(.94);
+            }
+
+            .select-traps__arrow-icon {
+                fill: #97a3cb;
+                height: 1.05rem;
+                width: .7rem;
+            }
+
+            .status-bar__actions {
+                display: flex;
+                align-items: stretch;
+                gap: 10px;
+                width: 100%;
+            }
+
+            .back-button {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                flex: 0 0 38%;
+                height: 46px;
+                background: rgba(151, 163, 203, .1);
+                border: 1px solid rgba(151, 163, 203, .18);
+                color: #cfd8f0;
+                text-align: center;
+                text-decoration: none;
+                padding: 0 12px;
+                border-radius: 10px;
+                font-family: inherit;
+                font-size: 14px;
+                font-weight: 500;
+                cursor: pointer;
+                transition: background-color .15s ease, transform .1s ease;
+            }
+
+            .back-button:hover {
+                background: rgba(151, 163, 203, .18);
+            }
+
+            .back-button:active {
+                transform: scale(.98);
+            }
+
+            .select-traps__arrow-icon_prev {
+                transform: rotate(180deg);
+            }
+
+            #modeButton {
+                display: none;
+            }
+
+            #playButton {
+                background: linear-gradient(93.73deg, #108de7, #0855c4);
+                border: none;
+                border-radius: 10px;
+                box-shadow: 0 6px 18px rgba(16, 141, 231, .3);
+                color: white;
+                font-family: inherit;
+                font-size: 15px;
+                font-weight: 600;
+                letter-spacing: .02em;
+                height: 46px;
+                flex: 1 1 auto;
+                width: auto;
+                margin: 0;
+                cursor: pointer;
+                transition: filter .15s ease, transform .1s ease, box-shadow .15s ease;
+            }
+
+            #playButton:active:not(:disabled) {
+                transform: scale(.98);
+                filter: brightness(1.08);
+            }
+
+            #playButton:disabled {
+                opacity: 0.55;
+                box-shadow: none;
+                cursor: not-allowed;
+            }
+
+            .hidden {
+                display: none !important;
+            }
+
+            .popup {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: rgba(0, 0, 0, 0.5);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 1000;
+            }
+
+            .popup-content {
+                background: linear-gradient(180deg, #1a233c, #131a2d);
+                border: 1px solid rgba(151, 163, 203, .18);
+                color: #e8edfa;
+                padding: 20px;
+                border-radius: 16px;
+                text-align: center;
+                width: var(--ui-width);
+                margin: 20px;
+            }
+
+            .popup-buttons {
+                display: flex;
+                gap: 10px;
+                margin-top: 14px;
+            }
+
+            .popup-buttons button {
+                flex: 1;
+                height: 42px;
+                border: none;
+                border-radius: 10px;
+                font-family: inherit;
+                font-size: 14px;
+                font-weight: 500;
+                color: #fff;
+                cursor: pointer;
+            }
+
+            #confirmReset {
+                background: linear-gradient(93.73deg, #108de7, #0855c4);
+            }
+
+            #cancelReset {
+                background: rgba(151, 163, 203, .14);
+                color: #cfd8f0;
+            }
+
+            @keyframes fadeIn {
+                from {
+                    opacity: 0;
+                }
+
+                to {
+                    opacity: 1;
+                }
+            }
+
+            .fade-in {
+                animation: fadeIn 0.5s forwards;
+            }
+
+            @keyframes fadeIn {
+                0% {
+                    opacity: 0;
+                    transform: translate(-50%, -50%) scale(0);
+                }
+
+                100% {
+                    opacity: 1;
+                    transform: translate(-50%, -50%) scale(1);
+                }
+            }
+
+            @keyframes fadeOut {
+                0% {
+                    opacity: 1;
+                    transform: scale(1);
+                }
+
+                100% {
+                    opacity: 0;
+                    transform: scale(0);
+                }
+            }
+
+            .cell-fade-out {
+                animation: fadeOut 0.5s ease forwards;
+            }
+
+            .star-animation {
+                position: absolute !important;
+                width: 48px !important;
+                height: 48px !important;
+                top: 50% !important;
+                left: 50% !important;
+                transform: translate(-50%, -50%) !important;
+                transition: opacity 0.3s, transform 0.3s;
+            }
+
+            .star-animation.fade-in {
+                animation: fadeIn 0.5s ease forwards;
+            }
+
+            @media (max-width: 767px) {
+                .cells-board {
+                    grid-template-columns: repeat(5, minmax(0, 1fr));
+                    grid-template-rows: repeat(5, minmax(0, 1fr));
+                }
+            }
+
+            /* Écrans bas (téléphone en paysage, petite fenêtre) :
+               on compresse tout pour que rien ne sorte de l'écran. */
+            @media (max-height: 560px) {
+                :root {
+                    --board-size: min(320px, 62vw, 38vh);
+                }
+
+                body {
+                    padding-top: 8px;
+                }
+
+                .logo {
+                    margin-bottom: 0;
+                }
+
+                .logo img {
+                    width: clamp(56px, 12vw, 72px);
+                }
+
+                .flex {
+                    margin-top: 0;
+                }
+
+                .cells-board-wrapper {
+                    margin: 8px auto;
+                }
+
+                .status-bar {
+                    gap: 8px;
+                    padding: 10px;
+                    margin-top: 6px;
+                    border-radius: 14px;
+                }
+
+                .status-bar__select-traps {
+                    height: 2.5rem;
+                }
+
+                #prev_preset_btn, #next_preset_btn {
+                    width: 2.2rem;
+                    height: 2.2rem;
+                }
+
+                #playButton, .back-button {
+                    height: 38px;
+                }
+
+                .logos2 img {
+                    height: min(37vw, 250px, 17vh);
+                }
+            }
+
+            /* ============ ÉCRAN DE CHARGEMENT (comme les autres jeux) ============ */
+            .first-page {
+                position: fixed;
+                inset: 0;
+                z-index: 40;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                gap: 28px;
+                padding: 24px;
+                background: #0b1020;
+                background-image:
+                    radial-gradient(120% 65% at 50% 20%, #24365f 0%, rgba(36, 54, 95, 0) 62%),
+                    linear-gradient(180deg, #111c33 0%, #0c1324 55%, #070b16 100%);
+                transition: opacity .5s ease;
+            }
+
+            .first-page.hidden {
+                opacity: 0;
+                pointer-events: none;
+            }
+
+            .center-image {
+                width: min(46vw, 180px);
+                max-height: 34vh;
+                object-fit: contain;
+                border-radius: 26px;
+                filter: drop-shadow(0 12px 40px rgba(16, 141, 231, .38));
+                animation: pulse-logo 1.8s ease-in-out infinite;
+            }
+
+            @keyframes pulse-logo {
+                0%, 100% {
+                    transform: scale(1);
+                }
+
+                50% {
+                    transform: scale(1.06);
+                }
+            }
+
+            .loader-container {
+                width: min(78vw, 320px);
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 12px;
+            }
+
+            .loader-bar-track {
+                width: 100%;
+                height: 8px;
+                background: rgba(255, 255, 255, .10);
+                border: 1px solid rgba(255, 255, 255, .12);
+                border-radius: 50px;
+                overflow: hidden;
+            }
+
+            .loader-bar-fill {
+                height: 100%;
+                width: 1%;
+                border-radius: 50px;
+                background: linear-gradient(90deg, #45c8ff, #108de7, #0855c4);
+                box-shadow: 0 0 14px rgba(16, 141, 231, .8);
+                transition: width .06s linear;
+            }
+
+            .loader-pct {
+                font-weight: 700;
+                font-size: 15px;
+                letter-spacing: 3px;
+                color: #fff;
+            }
+
+            .loader-label {
+                font-size: 11px;
+                letter-spacing: 4px;
+                color: rgba(232, 238, 252, .6);
+                text-align: center;
+            }
+
+            .no-select {
+                -webkit-user-select: none;
+                user-select: none;
+            }
+
+            @media (hover: none) {
+                #prev_preset_btn, #next_preset_btn, #playButton {
+                    -webkit-tap-highlight-color: transparent;
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <!-- Écran de chargement à l'ouverture du jeu -->
+        <div class="first-page" id="first-page">
+            <img src="img/apple-touch-icon.png" alt="Mines" class="center-image">
+            <div class="loader-container">
+                <div class="loader-label">CHARGEMENT DU PRÉDICTEUR...</div>
+                <div class="loader-bar-track">
+                    <div class="loader-bar-fill" id="loader-bar-fill"></div>
+                </div>
+                <div class="loader-pct" id="loader-pct">1%</div>
+            </div>
+        </div>
+
+        <div class="logo">
+            <img src="img/logo-1win.svg" alt="1win logo">
+        </div>
+        <div id="resetPopup" class="popup hidden">
+            <div class="popup-content">
+                <p id="popup-content"></p>
+                <div class="popup-buttons">
+                    <button id="confirmReset" data-i18n="confirm">Confirmer</button>
+                    <button id="cancelReset" data-i18n="cancel">Annuler</button>
+                </div>
+            </div>
+        </div>
+        <div class="flex justify-center align-middle">
+            <div class="cells-board-wrapper">
+                <div class="cells-board">
+                    <div class="cells-board-mask">
+                        <div class="animated-highlight"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="status-bar">
+            <div class="select-traps status-bar__select-traps">
+                <button class="select-traps__prev-arrow-btn disabled:opacity-50" type="button" id="prev_preset_btn">
+                    <svg class="select-traps__arrow-icon select-traps__arrow-icon_prev" viewBox="0 0 13 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M2.92616 20.0002L10.7906 12.082L12.8584 10.0001L10.7906 7.91821L2.92616 0L0.858398 2.0819L8.72287 10.0001L0.858398 17.9183L2.92616 20.0002Z"></path>
+                    </svg>
+                </button>
+                <div class="select-traps__content">
+                    <span class="select-traps__traps_amount" id="trapsAmount">1</span>
+                    <span class="select-traps__title" data-i18n="traps">Pièges</span>
+                </div>
+                <button class="select-traps__next-arrow-btn disabled:opacity-50" type="button" id="next_preset_btn">
+                    <svg class="select-traps__arrow-icon" viewBox="0 0 13 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M2.92616 20.0002L10.7906 12.082L12.8584 10.0001L10.7906 7.91821L2.92616 0L0.858398 2.0819L8.72287 10.0001L0.858398 17.9183L2.92616 20.0002Z"></path>
+                    </svg>
+                </button>
+            </div>
+            <div class="status-bar__actions">
+                <button id="playButton" type="button" data-i18n="play">Obtenir le signal</button>
+                <a onclick="closePage()" class="back-button" data-i18n="back">Retour</a>
+            </div>
+        </div>
+        <div class="logos2">
+            <img src="img/ground.webp" alt="logos2q">
+        </div>
+        <script src="../shared/protect.js"></script>
+        <script src="../shared/predictor.js"></script>
+        <script src="js/mines.js"></script>
+
+    </body>
+</html>

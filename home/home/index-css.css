@@ -1,0 +1,351 @@
+/* PREDICTOR HUB — styles de la page d accueil. Extrait de index.html. */
+
+:root {
+    --vh: 1vh;
+    --cyan: #22d3ee;
+    --violet: #a855f7;
+    --ink: #06070f;
+    --txt: #eaf0ff;
+}
+
+* {
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    min-height: calc(var(--vh) * 100);
+    background: var(--ink);
+    color: var(--txt);
+    font-family: "Segoe UI", Arial, sans-serif;
+    overflow-x: hidden;
+    touch-action: manipulation;
+}
+
+/* ============ FOND ANIMÉ ============ */
+.bg-wrap {
+    position: fixed;
+    inset: 0;
+    z-index: -2;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.bg-base {
+    position: absolute;
+    inset: 0;
+    background:
+        radial-gradient(90% 60% at 15% 0%, rgba(168, 85, 247, .30), transparent 62%),
+        radial-gradient(85% 55% at 90% 20%, rgba(34, 211, 238, .20), transparent 60%),
+        radial-gradient(90% 60% at 50% 110%, rgba(224, 57, 155, .22), transparent 65%),
+        linear-gradient(180deg, #0a0b20 0%, #06070f 55%, #0a0718 100%);
+}
+
+.bg-grid {
+    position: absolute;
+    top: -20%;
+    bottom: -20%;
+    left: -60%;
+    right: -60%;
+    background-image:
+        linear-gradient(to right, rgba(130, 180, 255, .10) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(130, 180, 255, .10) 1px, transparent 1px);
+    background-size: 52px 52px;
+    animation: gridslide 7s linear infinite;
+    will-change: transform;
+}
+
+@keyframes gridslide {
+    from {
+        transform: translateX(0);
+    }
+
+    to {
+        transform: translateX(-52px);
+    }
+}
+
+.bg-sweep {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(100deg, transparent 32%, rgba(34, 211, 238, .09) 48%, rgba(168, 85, 247, .11) 56%, transparent 72%);
+    animation: sweep 11s linear infinite;
+}
+
+@keyframes sweep {
+    from {
+        transform: translateX(60%);
+    }
+
+    to {
+        transform: translateX(-60%);
+    }
+}
+
+.bg-mask {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(90% 70% at 50% 40%, transparent 30%, rgba(6, 7, 15, .5) 80%, rgba(6, 7, 15, .88) 100%);
+}
+
+/* ============ MISE EN PAGE ============ */
+.page {
+    position: relative;
+    min-height: 100vh;
+    min-height: calc(var(--vh) * 100);
+    display: flex;
+    flex-direction: column;
+    padding: 26px 16px calc(24px + env(safe-area-inset-bottom));
+    max-width: 620px;
+    margin: 0 auto;
+    opacity: 0;
+    transform: translateY(10px);
+    animation: reveal .6s ease forwards;
+}
+
+@keyframes reveal {
+    to {
+        opacity: 1;
+        transform: none;
+    }
+}
+
+.head {
+    text-align: center;
+    margin-bottom: 22px;
+}
+
+.live {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 14px;
+    border-radius: 50px;
+    font-size: 10px;
+    font-weight: 900;
+    letter-spacing: 2px;
+    color: #7dffb2;
+    background: rgba(16, 185, 129, .12);
+    border: 1px solid rgba(125, 255, 178, .35);
+    margin-bottom: 14px;
+}
+
+.live i {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #22c55e;
+    box-shadow: 0 0 10px #22c55e;
+    animation: blink 1.4s ease-in-out infinite;
+}
+
+@keyframes blink {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: .25;
+    }
+}
+
+h1 {
+    margin: 0 0 8px;
+    font-size: clamp(26px, 8vw, 40px);
+    font-weight: 900;
+    letter-spacing: -.5px;
+    line-height: 1.05;
+    background: linear-gradient(100deg, #fff 20%, var(--cyan) 55%, var(--violet) 85%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+}
+
+.sub {
+    margin: 0;
+    font-size: 11.5px;
+    letter-spacing: 3px;
+    font-weight: 800;
+    color: rgba(234, 240, 255, .45);
+}
+
+/* ============ GRILLE DES JEUX ============ */
+.grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+    flex: 1;
+    align-content: start;
+}
+
+.card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    border-radius: 18px;
+    overflow: hidden;
+    text-decoration: none;
+    color: inherit;
+    background: rgba(255, 255, 255, .045);
+    border: 1px solid rgba(255, 255, 255, .12);
+    box-shadow: 0 10px 26px rgba(0, 0, 0, .45);
+    transition: transform .18s ease, box-shadow .25s ease, border-color .25s ease;
+    animation: pop .5s ease backwards;
+}
+
+.card:nth-child(1) {
+    animation-delay: .05s;
+}
+
+.card:nth-child(2) {
+    animation-delay: .12s;
+}
+
+.card:nth-child(3) {
+    animation-delay: .19s;
+}
+
+.card:nth-child(4) {
+    animation-delay: .26s;
+}
+
+@keyframes pop {
+    from {
+        opacity: 0;
+        transform: translateY(14px) scale(.97);
+    }
+}
+
+.card:active {
+    transform: translateY(2px) scale(.985);
+    box-shadow: 0 5px 14px rgba(0, 0, 0, .5);
+}
+
+.card-media {
+    position: relative;
+    display: block;
+    aspect-ratio: 235 / 320;
+    overflow: hidden;
+}
+
+.card-media img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+/* fondu vers le pied de carte pour souder l'image au texte */
+.card-media::after {
+    content: "";
+    position: absolute;
+    inset: auto 0 0 0;
+    height: 42%;
+    background: linear-gradient(180deg, transparent, rgba(10, 11, 26, .85) 78%, #0a0b1a 100%);
+}
+
+.card-foot {
+    padding: 10px 12px 13px;
+    background: #0a0b1a;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.card-name {
+    font-size: 13px;
+    font-weight: 900;
+    letter-spacing: .8px;
+    line-height: 1.15;
+}
+
+.card-go {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 9.5px;
+    font-weight: 900;
+    letter-spacing: 1.6px;
+    color: rgba(234, 240, 255, .5);
+}
+
+.card-go b {
+    font-size: 12px;
+    line-height: 1;
+}
+
+/* liseré coloré propre à chaque jeu */
+.card::before {
+    content: "";
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 3px;
+    z-index: 2;
+    background: var(--accent);
+    box-shadow: 0 0 16px var(--accent);
+}
+
+.card.aviator {
+    --accent: #e50539;
+}
+
+.card.luckyjet {
+    --accent: #a855f7;
+}
+
+.card.meta {
+    --accent: #22d3ee;
+}
+
+.card.mines {
+    --accent: #ffb020;
+}
+
+.card:hover {
+    border-color: var(--accent);
+}
+
+.card:hover .card-go {
+    color: var(--accent);
+}
+
+.tag {
+    position: absolute;
+    top: 9px;
+    left: 9px;
+    z-index: 2;
+    padding: 4px 9px;
+    border-radius: 50px;
+    font-size: 8.5px;
+    font-weight: 900;
+    letter-spacing: 1.2px;
+    color: #fff;
+    background: rgba(0, 0, 0, .55);
+    border: 1px solid rgba(255, 255, 255, .18);
+    backdrop-filter: blur(6px);
+}
+
+.foot {
+    margin-top: 22px;
+    text-align: center;
+    font-size: 10px;
+    letter-spacing: 1.6px;
+    color: rgba(234, 240, 255, .3);
+    line-height: 1.9;
+}
+
+@media (min-width: 560px) {
+    .grid {
+        grid-template-columns: repeat(4, 1fr);
+    }
+
+    .card-name {
+        font-size: 12px;
+    }
+}
