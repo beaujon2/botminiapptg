@@ -209,7 +209,7 @@ function closePage() {
     if (ref && location.origin !== 'null' && ref.indexOf(location.origin) === 0 && window.history.length > 1) {
         window.history.back();
     } else {
-        window.location.href = '../index.html';
+        window.location.href = '..home/index.html';
     }
 }
 
